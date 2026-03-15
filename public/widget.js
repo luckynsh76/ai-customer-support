@@ -92,12 +92,13 @@ messages.innerHTML += `<div class="user">${text}</div>`
 
 input.value=""
 
-const res = await fetch("http://localhost:3000/chat",{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({message:text})
+const res = await fetch("https://ai-customer-support-jbrt.onrender.com/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-client-key": "restaurant_tonys_pizza_key"
+  },
+  body: JSON.stringify({ message: text })
 })
 
 const data = await res.json()

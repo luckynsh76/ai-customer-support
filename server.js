@@ -1,4 +1,5 @@
 
+import rateLimit from "express-rate-limit"
 import 'dotenv/config'
 import express from "express"
 import cors from "cors"
@@ -6,20 +7,48 @@ import OpenAI from "openai"
 import path from "path"
 import { fileURLToPath } from "url"
 
+const limiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // max requests per minute
+  message: { error: "Too many requests. Please slow down." }
+});
+
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const app = express()
 
+// 🔐 Allowed SaaS clients
+const CLIENT_KEYS = [
+  "restaurant_tonys_pizza_key",
+  "restaurant_burger_house_key"
+]
+
+// 🌐 Allowed websites using the widget
+
+const ALLOWED_DOMAINS = [
+  "tonyspizza.com",
+  "burgerhouse.se",
+  "localhost"
+]
+
 app.use(cors())
 app.use(express.json())
 app.use(express.static(path.join(__dirname, "public")))
+
+app.use("/chat", limiter);
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-app.post("/chat", async (req, res) => {
+app.post("/chat", verifyClient, async (req, res) => {
+  const clientKey = req.headers["x-client-key"]
+
+  if (!CLIENT_KEYS.includes(clientKey)) {
+    return res.status(403).json({ error: "Invalid client key" })
+  }
 
   try {
 
