@@ -21,15 +21,13 @@ const app = express()
 
 // 🔐 Allowed SaaS clients
 const CLIENT_KEYS = [
-  "restaurant_tonys_pizza_key",
-  "restaurant_burger_house_key"
+  "stoiccode_main_key"
 ]
 
 // 🌐 Allowed websites using the widget
 
 const ALLOWED_DOMAINS = [
-  "tonyspizza.com",
-  "burgerhouse.se",
+  "stoiccode.org",
   "localhost"
 ]
 
@@ -43,11 +41,20 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-app.post("/chat", verifyClient, async (req, res) => {
+app.post("/chat", async (req, res) => {
   const clientKey = req.headers["x-client-key"]
 
   if (!CLIENT_KEYS.includes(clientKey)) {
     return res.status(403).json({ error: "Invalid client key" })
+  }
+
+  const origin = req.headers.origin || req.headers.referer || ""
+  const domainAllowed = ALLOWED_DOMAINS.some(domain =>
+    origin.includes(domain)
+  )
+
+  if (!domainAllowed) {
+    return res.status(403).json({ error: "Domain not allowed" })
   }
 
   try {
@@ -60,7 +67,7 @@ app.post("/chat", verifyClient, async (req, res) => {
         {
           role: "system",
           content:
-            "You are a helpful AI assistant for a restaurant. Answer questions about menu, hours, location, reservations and food."
+            "You are StoicCode's AI assistant. Help users with Stoic philosophy, self-discipline, mindset, wallpapers, products, and general website support. Speak calmly, clearly, and with depth."
         },
         {
           role: "user",
@@ -88,5 +95,5 @@ app.post("/chat", verifyClient, async (req, res) => {
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT, () => {
-  console.log(`AI Restaurant Assistant running on http://localhost:${PORT}`)
+  console.log(`StoicCode AI Assistant running on http://localhost:${PORT}`)
 })

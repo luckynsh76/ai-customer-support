@@ -4,7 +4,7 @@ const chat = document.createElement("div")
 
 chat.innerHTML = `
 <div id="ai-widget">
-<div id="ai-header">Restaurant AI Assistant</div>
+<div id="ai-header">StoicCode AI Assistant</div>
 <div id="ai-messages"></div>
 
 <div id="ai-input">
@@ -96,7 +96,7 @@ const res = await fetch("https://ai-customer-support-jbrt.onrender.com/chat", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "x-client-key": "restaurant_tonys_pizza_key"
+    "x-client-key": "stoiccode_main_key"
   },
   body: JSON.stringify({ message: text })
 })
