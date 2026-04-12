@@ -4,11 +4,11 @@ const chat = document.createElement("div")
 
 chat.innerHTML = `
 <div id="ai-widget">
-<div id="ai-header">StoicCode AI Assistant</div>
+<div id="ai-header">Wisdom Assistant</div>
 <div id="ai-messages"></div>
 
 <div id="ai-input">
-<input id="ai-text" placeholder="Ask about menu or hours..." />
+<input id="ai-text" placeholder="Ask about Stoic wistom..." />
 <button id="ai-send">Send</button>
 </div>
 </div>
