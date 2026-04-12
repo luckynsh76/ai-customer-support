@@ -77,9 +77,9 @@ app.post("/chat", async (req, res) => {
       max_tokens: 300
     })
 
-    const reply = completion.choices[0].message.content
+    const reply = completion.choices[0]?.message.content || "No response"
 
-    res.json({ reply })
+    res.json({ reply: reply })
 
   } catch (error) {
 
