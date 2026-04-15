@@ -42,8 +42,11 @@ const openai = new OpenAI({
 })
 
 app.post("/chat", async (req, res) => {
-  try {
-    const userMessage = req.body.message
+  console.log("🔥 HIT /chat endpoint")
+  console.log("BODY:", req.body)
+
+  res.json({ reply: "Server is working ✅" })
+})
 
     const CLIENTS = {
       restaurant: `
