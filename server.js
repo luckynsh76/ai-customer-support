@@ -42,32 +42,64 @@ const openai = new OpenAI({
 })
 
 app.post("/chat", async (req, res) => {
-  const clientKey = req.headers["x-client-key"]
-
-  if (!CLIENT_KEYS.includes(clientKey)) {
-    return res.status(403).json({ error: "Invalid client key" })
-  }
-
-  const origin = req.headers.origin || req.headers.referer || ""
-  const domainAllowed = ALLOWED_DOMAINS.some(domain =>
-    origin.includes(domain)
-  )
-
-  if (!domainAllowed) {
-    return res.status(403).json({ error: "Domain not allowed" })
-  }
-
   try {
-
     const userMessage = req.body.message
 
+    const CLIENTS = {
+      restaurant: `
+    You are a restaurant AI assistant.
+    Answer only about:
+    - menu
+    - food
+    - drinks
+    - reservations
+    - opening hours
+    - location
+
+    If question is unrelated, guide back to restaurant topics.
+    Be short, helpful, direct.
+    `,
+
+      stoiccode: `
+    You are StoicCode's AI assistant.
+    Help with:
+    - mindset
+    - discipline
+    - philosophy
+    - self-improvement
+
+    Be deep but clear.
+    `,
+
+      law: `
+    You are a professional legal assistant.
+    Answer formally and clearly.
+    `,
+
+      ecommerce: `
+    You are a sales assistant.
+    Help convert visitors into customers.
+    `
+    }
+
+    const client = req.query.client || "default"
+
+    console.log("FULL QUERY:", req.query)
+    console.log("CLIENT:", client)
+    console.log("SYSTEM PROMPT:", CLIENTS[client])
+
+
+    const systemPrompt = CLIENTS[client] || `
+    You are a helpful AI assistant.
+    `
+
+    // 🚀 OPENAI CALL (THIS WAS MISSING / WRONG)
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content:
-            "You are StoicCode's AI assistant. Help users with Stoic philosophy, self-discipline, mindset, wallpapers, products, and general website support. Speak calmly, clearly, and with depth."
+          content: systemPrompt
         },
         {
           role: "user",
@@ -77,23 +109,21 @@ app.post("/chat", async (req, res) => {
       max_tokens: 300
     })
 
-    const reply = completion.choices[0]?.message.content || "No response"
+    const reply = completion.choices[0].message.content || "No response"
 
-    res.json({ reply: reply })
+    res.json({ reply })
 
   } catch (error) {
-
     console.error(error)
-
     res.status(500).json({
       error: "AI request failed"
     })
   }
-
 })
+
 
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT, () => {
-  console.log(`StoicCode AI Assistant running on http://localhost:${PORT}`)
+  console.log(`CyberITLeads AI running on http://localhost:${PORT}`)
 })

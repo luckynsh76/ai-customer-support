@@ -1,87 +1,97 @@
-(function(){
+(function () {
 
-const chat = document.createElement("div")
+  const widget = document.createElement("div")
 
-chat.innerHTML = `
-<div id="ai-widget">
-<div id="ai-header">Wisdom Assistant</div>
-<div id="ai-messages"></div>
+  widget.innerHTML = `
+    <div class="chat-widget">
+      <div class="chat-header">StoicCode Assistant</div>
+      <div id="messages" class="chat-messages"></div>
+      <div class="chat-input">
+        <input id="input" placeholder="Ask about life, discipline, or Stoic wisdom..." />
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+  `
 
-<div id="ai-input">
-<input id="ai-text" placeholder="Ask about Stoic wistom..." />
-<button id="ai-send">Send</button>
-</div>
-</div>
-`
+  document.body.appendChild(widget)
 
-document.body.appendChild(chat)
-
-const style = document.createElement("style")
+  const style = document.createElement("style")
 
 style.innerHTML = `
-#ai-widget{
-position:fixed;
-bottom:20px;
-right:20px;
-width:320px;
-background:white;
-border-radius:10px;
-box-shadow:0 10px 30px rgba(0,0,0,.2);
-font-family:Arial;
-overflow:hidden;
+.chat-widget{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  width:320px;
+  background:white;
+  border-radius:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,.2);
+  font-family:Arial;
+  overflow:hidden;
 }
 
-#ai-header{
-background:#222;
-color:white;
-padding:12px;
-font-weight:bold;
+.chat-header{
+  background:#222;
+  color:white;
+  padding:12px;
+  font-weight:bold;
 }
 
-#ai-messages{
-height:280px;
-overflow:auto;
-padding:10px;
+.chat-messages{
+  height:280px;
+  overflow:auto;
+  padding:10px;
 }
 
-#ai-input{
-display:flex;
-border-top:1px solid #eee;
+.chat-input{
+  display:flex;
+  border-top:1px solid #eee;
 }
 
-#ai-input input{
-flex:1;
-padding:10px;
-border:none;
+.chat-input input{
+  flex:1;
+  padding:10px;
+  border:none;
 }
 
-#ai-input button{
-padding:10px;
-background:#0066ff;
-color:white;
-border:none;
-cursor:pointer;
+.chat-input button{
+  padding:10px;
+  background:#0066ff;
+  color:white;
+  border:none;
+  cursor:pointer;
 }
 
 .user{
-text-align:right;
-color:#0066ff;
-margin-bottom:8px;
+  text-align:right;
+  color:#0066ff;
+  margin-bottom:8px;
+}
+.user {
+  text-align: right;
+  color: #0066ff;
+  margin-bottom: 8px;
 }
 
-.bot{
-text-align:left;
-margin-bottom:8px;
+.bot {
+  text-align: left;
+  margin-bottom: 8px;
+  color: #333;
 }
 `
 
 document.head.appendChild(style)
 
-const input = document.getElementById("ai-text")
-const button = document.getElementById("ai-send")
-const messages = document.getElementById("ai-messages")
+const input = document.getElementById("input")
+const button = document.getElementById("sendBtn")
+const messages = document.getElementById("messages")
 
 button.onclick = send
+input.addEventListener("keypress", function(e) {
+  if (e.key === "Enter") {
+    send()
+  }
+})
 
 async function send(){
 
@@ -92,7 +102,12 @@ messages.innerHTML += `<div class="user">${text}</div>`
 
 input.value=""
 
-const res = await fetch("https://ai-customer-support-jbrt.onrender.com/chat", {
+const client = "stoiccode" // change to restaurant, law, etc.
+
+console.log("CLIENT VALUE:", client)
+console.log("FINAL URL:", `http://localhost:3000/chat?client=${client}`)
+
+const res = await fetch(`http://localhost:3000/chat?client=${client}`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

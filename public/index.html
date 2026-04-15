@@ -1,130 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Restaurant AI Assistant</title>
-
-<style>
-
-body{
-font-family:Arial;
-background:#f4f4f4;
-margin:0;
-padding:0;
-}
-
-.chat-widget{
-position:fixed;
-bottom:20px;
-right:20px;
-width:320px;
-background:white;
-border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.2);
-overflow:hidden;
-}
-
-.chat-header{
-background:#222;
-color:white;
-padding:12px;
-font-weight:bold;
-}
-
-.chat-messages{
-height:300px;
-overflow-y:auto;
-padding:10px;
-}
-
-.message-user{
-text-align:right;
-color:#0066ff;
-margin-bottom:8px;
-}
-
-.message-ai{
-text-align:left;
-color:#333;
-margin-bottom:8px;
-}
-
-.chat-input{
-display:flex;
-border-top:1px solid #eee;
-}
-
-.chat-input input{
-flex:1;
-padding:10px;
-border:none;
-outline:none;
-}
-
-.chat-input button{
-padding:10px 15px;
-background:#0066ff;
-color:white;
-border:none;
-cursor:pointer;
-}
-
-</style>
+  <meta charset="UTF-8">
+  <title>Test Page</title>
 </head>
 
 <body>
+  <h1>Test Page</h1>
 
-<div class="chat-widget">
-
-<div class="chat-header">
-Restaurant AI Assistant
-</div>
-
-<div id="messages" class="chat-messages"></div>
-
-<div class="chat-input">
-<input id="input" placeholder="Ask about menu, hours..." />
-<button onclick="send()">Send</button>
-</div>
-
-</div>
-
-<script>
-
-async function send(){
-
-const input = document.getElementById("input")
-const messages = document.getElementById("messages")
-
-const text = input.value
-
-if(!text) return
-
-messages.innerHTML += `<div class="message-user">You: ${text}</div>`
-
-messages.scrollTop = messages.scrollHeight
-
-input.value=""
-
-const res = await fetch("/chat",{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-message:text
-})
-})
-
-const data = await res.json()
-
-messages.innerHTML += `<div class="message-ai">AI: ${data.reply}</div>`
-
-messages.scrollTop = messages.scrollHeight
-
-}
-
-</script>
-
+  <script src="widget.js"></script>
 </body>
 </html>
