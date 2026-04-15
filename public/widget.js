@@ -102,7 +102,7 @@ messages.innerHTML += `<div class="user">${text}</div>`
 
 input.value=""
 
-const client = "stoiccode" // change to restaurant, law, etc.
+const client = "cyberitleads" // change to restaurant, law, etc.
 
 console.log("CLIENT VALUE:", client)
 console.log("FINAL URL:", `https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`)
