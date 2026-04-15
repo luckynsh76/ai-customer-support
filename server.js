@@ -32,15 +32,7 @@ const ALLOWED_DOMAINS = [
   "https://cyberitleads.org"
 ]
 
-app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin || ALLOWED_DOMAINS.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error("Not allowed by CORS"))
-    }
-  }
-}))
+app.use(cors({ origin: true }))
 app.use(express.json())
 app.use(express.static(path.join(__dirname, "public")))
 

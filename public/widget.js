@@ -105,8 +105,8 @@ input.value=""
 const client = "stoiccode" // change to restaurant, law, etc.
 
 console.log("CLIENT VALUE:", client)
-console.log("FINAL URL:", `/chathttps://stoiccode-ai.onrender.com?client=${client}`)
-const res = await fetch(`https://stoiccode-ai.onrender.com/chat?client=${client}`, {
+console.log("FINAL URL:", `https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`)
+const res = await fetch(`https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
