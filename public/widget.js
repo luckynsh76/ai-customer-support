@@ -128,7 +128,6 @@ const SITE_CONFIG = {
 
 const client = HOST_TO_CLIENT[window.location.hostname] || "default";
 const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
-const client = HOST_TO_CLIENT[window.location.hostname] || "default";
 
 console.log("CLIENT VALUE:", client)
 console.log("FINAL URL:", `https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`)
