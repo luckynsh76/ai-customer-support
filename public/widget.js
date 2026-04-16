@@ -4,14 +4,14 @@
 
   widget.innerHTML = `
     <div class="chat-widget">
-      <div class="chat-header">StoicCode Assistant</div>
+      <div class="chat-header">${ui.title}</div>
       <div id="messages" class="chat-messages"></div>
       <div class="chat-input">
-        <input id="input" placeholder="Ask about life, discipline, or Stoic wisdom..." />
+        <input id="input" placeholder="${ui.placeholder}" />
         <button id="sendBtn">Send</button>
       </div>
     </div>
-  `
+  `;
 
   document.body.appendChild(widget)
 
