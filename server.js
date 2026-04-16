@@ -174,6 +174,52 @@ app.post("/chat", async (req, res) => {
   }
 })
 
+const fs = require("fs");
+const path = require("path");
+
+const LEADS_FILE = path.join(__dirname, "leads.json");
+
+function readLeads() {
+  try {
+    if (!fs.existsSync(LEADS_FILE)) return [];
+    const raw = fs.readFileSync(LEADS_FILE, "utf8");
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function saveLead(lead) {
+  const leads = readLeads();
+  leads.push(lead);
+  fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+}
+
+app.post("/lead", (req, res) => {
+  try {
+    const { email, message, client } = req.body;
+
+    if (!message && !email) {
+      return res.status(400).json({ error: "Missing lead data" });
+    }
+
+    const lead = {
+      email: email || "",
+      message: message || "",
+      client: client || "default",
+      createdAt: new Date().toISOString(),
+      ip: req.ip
+    };
+
+    saveLead(lead);
+
+    res.json({ ok: true, message: "Lead saved" });
+  } catch (error) {
+    console.error("Lead save error:", error);
+    res.status(500).json({ error: "Failed to save lead" });
+  }
+});
+
 
 const PORT = process.env.PORT || 3000
 
