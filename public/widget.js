@@ -4,10 +4,10 @@
 
   widget.innerHTML = `
     <div class="chat-widget">
-      <div class="chat-header">StoicCode Assistant</div>
+      <div class="chat-header">${ui.title}</div>
       <div id="messages" class="chat-messages"></div>
       <div class="chat-input">
-        <input id="input" placeholder="Ask about life, discipline, or Stoic wisdom..." />
+        <input id="input" placeholder="${ui.placeholder}" />
         <button id="sendBtn">Send</button>
       </div>
     </div>
@@ -107,9 +107,27 @@ const HOST_TO_CLIENT = {
   "www.stoiccode.org": "stoiccode",
   "cyberitleads.org": "cyberitleads",
   "www.cyberitleads.org": "cyberitleads",
-  "localhost": "stoiccode"
+  "localhost": "stoiccode",
+  "127.0.0.1": "stoiccode"
 };
 
+const SITE_CONFIG = {
+  stoiccode: {
+    title: "StoicCode Assistant",
+    placeholder: "Ask about life, discipline, or Stoic wisdom..."
+  },
+  cyberitleads: {
+    title: "CyberITLeads Assistant",
+    placeholder: "Ask about leads, AI widgets, or growing your business..."
+  },
+  default: {
+    title: "AI Assistant",
+    placeholder: "Ask a question..."
+  }
+};
+
+const client = HOST_TO_CLIENT[window.location.hostname] || "default";
+const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
 const client = HOST_TO_CLIENT[window.location.hostname] || "default";
 
 console.log("CLIENT VALUE:", client)
