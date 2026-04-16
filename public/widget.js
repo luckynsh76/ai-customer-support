@@ -151,6 +151,29 @@ const data = await res.json()
 
 messages.innerHTML += `<div class="bot">${data.reply}</div>`
 
+if (client === "cyberitleads" && !document.getElementById("leadBtn")) {
+  messages.innerHTML += `<div style="margin-top:8px;"><button id="leadBtn">Get a free setup</button></div>`
+
+  document.getElementById("leadBtn").onclick = async () => {
+    const email = prompt("Enter your email")
+    if (!email) return
+
+    await fetch("https://ai-customer-support-jbrt.onrender.com/lead", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        message: text,
+        client
+      })
+    })
+
+    alert("Thanks. We got your email.")
+  }
+}
+
 messages.scrollTop = messages.scrollHeight
 
 }
