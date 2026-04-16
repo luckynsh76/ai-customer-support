@@ -120,17 +120,14 @@ input.addEventListener("keypress", function(e) {
 })
 
 async function send(){
+  const text = input.value
+  if(!text) return;
 
-const text = input.value
-if(!text) return
-
-messages.innerHTML += `<div class="user">${text}</div>`
-
-input.value=""
+  messages.innerHTML += `<div class="user">${text}</div>`
+  input.value = "";
 
 
 console.log("CLIENT VALUE:", client)
-console.log("FINAL URL:", `https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`)
 const res = await fetch(`https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`, {
   method: "POST",
   headers: {
