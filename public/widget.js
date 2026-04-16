@@ -4,10 +4,10 @@
 
   widget.innerHTML = `
     <div class="chat-widget">
-      <div class="chat-header">${ui.title}</div>
+      <div class="chat-header">StoicCode Assistant</div>
       <div id="messages" class="chat-messages"></div>
       <div class="chat-input">
-        <input id="input" placeholder="${ui.placeholder}" />
+        <input id="input" placeholder="Ask about life, discipline, or Stoic wisdom..." />
         <button id="sendBtn">Send</button>
       </div>
     </div>
@@ -102,32 +102,7 @@ messages.innerHTML += `<div class="user">${text}</div>`
 
 input.value=""
 
-const HOST_TO_CLIENT = {
-  "stoiccode.org": "stoiccode",
-  "www.stoiccode.org": "stoiccode",
-  "cyberitleads.org": "cyberitleads",
-  "www.cyberitleads.org": "cyberitleads",
-  "localhost": "stoiccode",
-  "127.0.0.1": "stoiccode"
-};
-
-const SITE_CONFIG = {
-  stoiccode: {
-    title: "StoicCode Assistant",
-    placeholder: "Ask about life, discipline, or Stoic wisdom..."
-  },
-  cyberitleads: {
-    title: "CyberITLeads Assistant",
-    placeholder: "Ask about leads, AI widgets, or growing your business..."
-  },
-  default: {
-    title: "AI Assistant",
-    placeholder: "Ask a question..."
-  }
-};
-
-const client = HOST_TO_CLIENT[window.location.hostname] || "default";
-const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
+const client = "cyberitleads" // change to restaurant, law, etc.
 
 console.log("CLIENT VALUE:", client)
 console.log("FINAL URL:", `https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`)
