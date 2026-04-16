@@ -4,11 +4,19 @@
 
   const HOST_TO_CLIENT = {
   "stoiccode.org": "stoiccode",
-  "www.stoiccode.org": "stoiccode",
   "cyberitleads.org": "cyberitleads",
-  "www.cyberitleads.org": "cyberitleads",
   "localhost": "stoiccode"
 };
+
+function getCleanDomain() {
+  let host = window.location.hostname.toLowerCase();
+
+  if (host.startsWith("www.")) {
+    host = host.replace("www.", "");
+  }
+
+  return host;
+}
 
 const SITE_CONFIG = {
   stoiccode: {
@@ -25,7 +33,9 @@ const SITE_CONFIG = {
   }
 };
 
-const client = HOST_TO_CLIENT[window.location.hostname] || "default";
+const domain = getCleanDomain();
+const client = HOST_TO_CLIENT[domain] || "default";
+
 const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
 
   widget.innerHTML = `
