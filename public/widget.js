@@ -102,7 +102,15 @@ messages.innerHTML += `<div class="user">${text}</div>`
 
 input.value=""
 
-const client = "cyberitleads" // change to restaurant, law, etc.
+const HOST_TO_CLIENT = {
+  "stoiccode.org": "stoiccode",
+  "www.stoiccode.org": "stoiccode",
+  "cyberitleads.org": "cyberitleads",
+  "www.cyberitleads.org": "cyberitleads",
+  "localhost": "stoiccode"
+};
+
+const client = HOST_TO_CLIENT[window.location.hostname] || "default";
 
 console.log("CLIENT VALUE:", client)
 console.log("FINAL URL:", `https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`)
