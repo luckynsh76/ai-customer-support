@@ -151,7 +151,7 @@ const data = await res.json()
 
 messages.innerHTML += `<div class="bot">${data.reply}</div>`
 
-if (client === "cyberitleads" && !document.getElementById("leadBtn")) {
+if (!document.getElementById("leadBtn")) {
   messages.innerHTML += `<div style="margin-top:8px;"><button id="leadBtn">Get a free setup</button></div>`
 
   document.getElementById("leadBtn").onclick = async () => {
