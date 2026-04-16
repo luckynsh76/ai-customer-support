@@ -110,7 +110,23 @@ const HOST_TO_CLIENT = {
   "localhost": "stoiccode"
 };
 
+const SITE_CONFIG = {
+  stoiccode: {
+    title: "StoicCode Assistant",
+    placeholder: "Ask about life, discipline, or Stoic wisdom..."
+  },
+  cyberitleads: {
+    title: "CyberITLeads Assistant",
+    placeholder: "Ask about leads, AI widgets, or growing your business..."
+  },
+  default: {
+    title: "AI Assistant",
+    placeholder: "Ask a question..."
+  }
+};
+
 const client = HOST_TO_CLIENT[window.location.hostname] || "default";
+const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
 
 console.log("CLIENT VALUE:", client)
 console.log("FINAL URL:", `https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`)
