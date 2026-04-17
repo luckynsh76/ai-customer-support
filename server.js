@@ -197,6 +197,8 @@ function saveLead(lead) {
 app.post("/lead", (req, res) => {
   try {
     const { email, message, client } = req.body;
+    
+    console.log("NEW LEAD:", email);
 
     if (!message && !email) {
       return res.status(400).json({ error: "Missing lead data" });

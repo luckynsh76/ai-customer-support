@@ -157,7 +157,8 @@ if (client === "cyberitleads" && !document.getElementById("leadBtn")) {
   document.getElementById("leadBtn").onclick = async () => {
     const email = prompt("Enter your email")
     console.log("Sending lead:", email)
-    if (!email) return
+
+    if (!email) return;
 
     await fetch("https://ai-customer-support-jbrt.onrender.com/lead", {
       method: "POST",
