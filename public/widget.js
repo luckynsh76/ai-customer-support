@@ -1,3 +1,4 @@
+console.log(" NEW WIDGET LOADED");
 (function () {
 
   const widget = document.createElement("div")
@@ -151,7 +152,7 @@ const data = await res.json()
 
 messages.innerHTML += `<div class="bot">${data.reply}</div>`
 
-if (!document.getElementById("leadBtn")) {
+if (client === "cyberitleads" && !document.getElementById("leadBtn")) {
   messages.innerHTML += `<div style="margin-top:8px;"><button id="leadBtn">Get a free setup</button></div>`
 
   document.getElementById("leadBtn").onclick = async () => {
