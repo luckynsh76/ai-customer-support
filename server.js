@@ -8,6 +8,8 @@ import { fileURLToPath } from "url"
 import fs from "fs"
 import { createClient } from '@supabase/supabase-js'
 
+console.log("test deploy");
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
