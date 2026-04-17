@@ -176,7 +176,6 @@ app.post("/chat", async (req, res) => {
   }
 })
 
-const fs = require("fs");
 const path = require("path");
 
 const LEADS_FILE = path.join(__dirname, "leads.json");
