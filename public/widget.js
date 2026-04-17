@@ -138,7 +138,6 @@ async function send(){
 
 
 console.log("CLIENT VALUE:", client)
-console.log("Sending lead:", email)
 const res = await fetch(`https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`, {
   method: "POST",
   headers: {
@@ -157,6 +156,7 @@ if (client === "cyberitleads" && !document.getElementById("leadBtn")) {
 
   document.getElementById("leadBtn").onclick = async () => {
     const email = prompt("Enter your email")
+    console.log("Sending lead:", email)
     if (!email) return
 
     await fetch("https://ai-customer-support-jbrt.onrender.com/lead", {
