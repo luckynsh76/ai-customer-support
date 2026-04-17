@@ -1,4 +1,3 @@
-console.log(" NEW WIDGET LOADED");
 (function () {
 
   const widget = document.createElement("div")

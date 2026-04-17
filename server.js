@@ -1,4 +1,3 @@
-
 import rateLimit from "express-rate-limit"
 import 'dotenv/config'
 import express from "express"
@@ -6,6 +5,7 @@ import cors from "cors"
 import OpenAI from "openai"
 import path from "path"
 import { fileURLToPath } from "url"
+import fs from "fs"
 
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -13,11 +13,11 @@ const limiter = rateLimit({
   message: { error: "Too many requests. Please slow down." }
 });
 
-
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const app = express()
+app.set('trust proxy', 1)
 
 // 🔐 Allowed SaaS clients
 const CLIENT_KEYS = [
@@ -141,7 +141,6 @@ app.post("/chat", async (req, res) => {
     console.log("CLIENT:", client)
     console.log("SYSTEM PROMPT:", CLIENTS[client])
 
-
     const systemPrompt = CLIENTS[client] || `
     You are a helpful AI assistant.
     `
@@ -219,7 +218,6 @@ app.post("/lead", (req, res) => {
     res.status(500).json({ error: "Failed to save lead" });
   }
 });
-
 
 const PORT = process.env.PORT || 3000
 
