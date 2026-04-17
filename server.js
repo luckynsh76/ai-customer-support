@@ -6,12 +6,18 @@ import OpenAI from "openai"
 import path from "path"
 import { fileURLToPath } from "url"
 import fs from "fs"
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+)
 
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 30, // max requests per minute
   standardHeaders: true,
-  legacyHeader: false,
+  legacyHeaders: false,
   message: { error: "Too many requests. Please slow down." }
 });
 
@@ -176,48 +182,37 @@ app.post("/chat", async (req, res) => {
   }
 })
 
-const LEADS_FILE = path.join(__dirname, "leads.json");
-
-function readLeads() {
-  try {
-    if (!fs.existsSync(LEADS_FILE)) return [];
-    const raw = fs.readFileSync(LEADS_FILE, "utf8");
-    return raw ? JSON.parse(raw) : [];
-  } catch (err) {
-    return [];
-  }
-}
-
-function saveLead(lead) {
-  const leads = readLeads();
-  leads.push(lead);
-  fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
-}
-
-app.post("/lead", (req, res) => {
+app.post("/lead", async (req, res) => {
   try {
     const { email, message, client } = req.body;
-    
+
     console.log("NEW LEAD:", email);
 
-    if (!message && !email) {
+    if (!email || !message) {
       return res.status(400).json({ error: "Missing lead data" });
     }
 
-    const lead = {
-      email: email || "",
-      message: message || "",
-      client: client || "default",
-      createdAt: new Date().toISOString(),
-      ip: req.ip
-    };
+    const { data, error } = await supabase
+      .from("leads")
+      .insert([
+        {
+          email: email,
+          message: message,
+          client: client || "default",
+          created_at: new Date().toISOString()
+        }
+      ]);
 
-    saveLead(lead);
+    if (error) {
+      console.error("Supabase error:", error);
+      return res.status(500).json({ error: "Failed to save lead" });
+    }
 
-    res.json({ ok: true, message: "Lead saved" });
-  } catch (error) {
-    console.error("Lead save error:", error);
-    res.status(500).json({ error: "Failed to save lead" });
+    res.json({ ok: true, message: "Lead saved to database 🚀" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 

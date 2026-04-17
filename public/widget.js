@@ -5,7 +5,7 @@
   const HOST_TO_CLIENT = {
   "stoiccode.org": "stoiccode",
   "cyberitleads.org": "cyberitleads",
-  "localhost": "stoiccode"
+  "localhost": "cyberitleads"
 };
 
 function getCleanDomain() {
@@ -142,7 +142,7 @@ const res = await fetch(`https://ai-customer-support-jbrt.onrender.com/chat?clie
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "x-client-key": "stoiccode_main_key"
+    "x-client-key": "cyberitleads_main_key"
   },
   body: JSON.stringify({ message: text })
 })
@@ -167,8 +167,8 @@ if (client === "cyberitleads" && !document.getElementById("leadBtn")) {
       },
       body: JSON.stringify({
         email,
-        message: text,
-        client
+        message: "User clicked Get a free setup",
+        client: "cyberitleads"
       })
     })
 
