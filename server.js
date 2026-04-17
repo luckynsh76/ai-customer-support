@@ -10,6 +10,8 @@ import fs from "fs"
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 30, // max requests per minute
+  standardHeaders: true,
+  legacyHeader: false,
   message: { error: "Too many requests. Please slow down." }
 });
 
@@ -18,6 +20,7 @@ const __dirname = path.dirname(__filename)
 
 const app = express()
 app.set('trust proxy', 1)
+app.use(limiter)
 
 // 🔐 Allowed SaaS clients
 const CLIENT_KEYS = [
