@@ -138,6 +138,7 @@ async function send(){
 
 
 console.log("CLIENT VALUE:", client)
+console.log("Sending lead:", email)
 const res = await fetch(`https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`, {
   method: "POST",
   headers: {
