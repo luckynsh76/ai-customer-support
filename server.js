@@ -241,10 +241,11 @@ app.post("/chat", async (req, res) => {
 
     const reply = completion.choices[0].message.content || "No response"
 
-    res.json({ reply })
+    res.json({ reply });
+
   } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: "AI request failed" })
+    console.error("CHAT ERROR:", error);
+    res.status(500).json({ reply: "AI request failed" })
   }
 })
 
