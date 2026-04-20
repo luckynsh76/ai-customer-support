@@ -291,35 +291,48 @@ app.post("/lead", async (req, res) => {
     }
 
     /* ===== SEND EMAIL TO YOU (BUSINESS) ===== */
+  try {
     await transporter.sendMail({
       from: `"CyberITLeads" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
       subject: "🔥 New Lead Captured",
       html: `
         <h2>New Lead</h2>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Message:</b> ${message}</p>
-        <p><b>Client:</b> ${client || "default"}</p>
+         <p><b>Email:</b> ${email}</p>
+         <p><b>Message:</b> ${message}</p>
+         <p><b>client:</b> ${client || "default"}</p>    
       `
-    });
+    })
+
+    console.log("BUSINESS EMAIL SENT ✅")
+
+  } catch (err) {
+    console.error("BUSINESS EMAIL FAILED ❌", err)
+  }
+
     /* ===== SEND EMAIL TO CLIENT ===== */
+  try {
     await transporter.sendMail({
       from: `"CyberITLeads" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "🚀 We received your request",
-      html: `
-        <h2>You're in.</h2>
-        <p>Thanks for your interest in CyberITLeads.</p>
-        <p>We’ve received your request and will help you set up your AI assistant.</p>
-        <p>Expect a response shortly.</p>
-        <hr/>
-        <p><b>Your message:</b></p>
-        <p>${message}</p>
-        <br/>
-        <p>— CyberITLeads Team</p>
+      html:`
+         <h2>You're in.</h2>
+         <p>Thanks for your interest in CyberITLeads.</p>
+         <p>Expect a response shortly.</p>
+         <br>
+         <p><b>Your message:</b></P>
+         <p>${message}</p>
+         <br/>
+         <p> CyberITLeads Team</p>
       `
     });
 
+    console.log("CLIENT EMAIL SENT ✅")
+
+    } catch (err) {
+      console.error("CLIENT EMAIL FAILED ❌", err)
+    }
     /* ===== RESPONSE ===== */
     res.json({ ok: true })
   } catch (err) {
