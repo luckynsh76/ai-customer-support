@@ -227,6 +227,12 @@ app.post("/chat", async (req, res) => {
     `
     }
 
+    const client = req.query.client || "default"
+
+    console.log("FULL QUERY:", req.query)
+    console.log("CLIENT:", client)
+    console.log("SYSTEM PROMPT:", CLIENTS[client])
+
 
     const systemPrompt = CLIENTS[client] || "You are a helpful AI assistant."
 
