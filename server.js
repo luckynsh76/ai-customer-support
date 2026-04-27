@@ -11,7 +11,7 @@ import Stripe from "stripe"
 import nodemailer from "nodemailer"
 import { v4 as uuidv4 } from "uuid"
 import { findMatchingProducts } from "./router.js";
-import { PRODUCTS } from "./BOOKSLINKS.js"
+import { PRODUCTS } from "./bookslinks.js"
 
 const sessions = {}
 
