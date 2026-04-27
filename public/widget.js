@@ -56,18 +56,18 @@ const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
 style.innerHTML = `
 .chat-widget {
   position: fixed;
-  bottom: 20px;
-  right: 16px;
+  bottom: 16px;
+  right: 12px;
 
-  width: 90%;
-  max-width: 350px;
+  width: 85%;
+  max-width: 320px;
 
-  height: 60vh;
-  max-height: 500px;
+  height: 50vh;
+  max-height: 420px;
 
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
 
   display: flex;
   flex-direction: column;
@@ -145,12 +145,12 @@ background: #333;
 
 @media (max-width: 768px) {
   .chat-widget {
-    width: 92%;
-    max-width: 320px;
+    width: 88%;
+    max-width: 300px;
 
-    height: 55vh;
+    height: 45vh;
 
-    bottom: 12px;
+    bottom: 10px;
     right: 8px;
   }
 }
