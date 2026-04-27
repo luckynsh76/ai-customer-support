@@ -1,5 +1,5 @@
 // ===== IMPORT PRODUCTS =====
-import { PRODUCTS } from "./bookslinks.JS";
+import { PRODUCTS } from "./temp.js";
 
 // ===== MAIN FUNCTION =====
 export function findMatchingProducts(userMessage) {
