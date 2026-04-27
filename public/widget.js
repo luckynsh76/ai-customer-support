@@ -50,18 +50,6 @@ const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
   `;
 
   document.body.appendChild(widget)
-  // Create toggle button
-  const toggle = document.createElement("div")
-  toggle.id = "chat-toggle"
-  toggle.innerHTML = "💬"
-
-  document.body.appendChild(toggle)
-
-  // Toggle logic
-  toggle.onclick = () => {
-    widget.classList.toggle("open");
-  };
-
 
   const style = document.createElement("style")
 
@@ -81,15 +69,11 @@ style.innerHTML = `
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 
-  display: none;
+  display: flex;
   flex-direction: column;
   overflow: hidden;
 
   z-index: 9999;
-}
-
-.chat-widget.open {
-  display: flex;
 }
 
 .chat-header{
