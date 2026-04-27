@@ -56,18 +56,18 @@ const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
 style.innerHTML = `
 .chat-widget {
   position: fixed;
-  bottom: 16px;
-  right: 12px;
+  bottom: 12px;
+  right: 10px;
 
-  width: 85%;
-  max-width: 320px;
+  width: 80%;
+  max-width: 300px;
 
-  height: 50vh;
-  max-height: 420px;
+  height: 42vh;
+  max-height: 380px;
 
   background: white;
-  border-radius: 14px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
 
   display: flex;
   flex-direction: column;
@@ -91,8 +91,8 @@ style.innerHTML = `
 }
 
 .chat-messages{
-  height:280px;
-  overflow:auto;
+  flex: 1;
+  overflow-y:auto;
   padding:10px;
 }
 
@@ -115,11 +115,6 @@ style.innerHTML = `
   cursor:pointer;
 }
 
-.user{
-  text-align:right;
-  color:#0066ff;
-  margin-bottom:8px;
-}
 .user {
   text-align: right;
   color: #0066ff;
@@ -145,18 +140,13 @@ background: #333;
 
 @media (max-width: 768px) {
   .chat-widget {
-    width: 88%;
-    max-width: 300px;
+    width: 78%;
+    max-width: 260px;
 
-    height: 45vh;
+    height: 38vh;
 
-    bottom: 10px;
-    right: 8px;
-  }
-}
-
-  .chat-messages {
-    height: calc(70vh - 100px);
+    bottom: 8px;
+    right: 6px;
   }
 }
 
