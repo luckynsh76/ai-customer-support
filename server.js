@@ -1,5 +1,5 @@
-import rateLimit from "express-rate-limit"
 import "dotenv/config"
+import rateLimit from "express-rate-limit"
 import express from "express"
 import cors from "cors"
 import OpenAI from "openai"
@@ -10,6 +10,11 @@ import { createClient } from "@supabase/supabase-js"
 import Stripe from "stripe"
 import nodemailer from "nodemailer"
 import { v4 as uuidv4 } from "uuid"
+import { findMatchingProducts } from "./router.js";
+import { PRODUCTS } from "./BOOKSLINKS.js"
+
+const sessions = {}
+
 
 // ===== INIT =====
 const app = express()
@@ -58,9 +63,19 @@ app.post("/webhook", express.raw({ type: "application/json" }), async (req, res)
 
     const session = event.data.object
     const email = session.customer_email
-    const userId = uuidv4()
+    const plan = session.metadata.plan || "starter"
+    const clientId = `rest_${uuidv4().slice(0, 8)}`
 
-    console.log("User created:", { userId, email })
+    await supabase.from("clients").insert([
+      {
+        client_id: clientId,
+        email: email,
+        plan: plan,
+        created_at: new Date().toISOString()
+      }
+    ])
+
+    const script = `<script src="${process.env.BASE_URL}/widget.js?client=${clientId}"></script>`
 
     // ===== SEND EMAIL =====
     const transporter = nodemailer.createTransport({
@@ -84,7 +99,7 @@ app.post("/webhook", express.raw({ type: "application/json" }), async (req, res)
         <h2>Your AI Assistant is Ready</h2>
         <p>Copy and paste this into your website:</p>
         <pre style="background:#111;color:#0f0;padding:10px;border-radius:6px;">
-&lt;script src="${process.env.BASE_URL}/widget.js" data-user="${userId}"&gt;&lt;/script&gt;
+&lt;script src="${process.env.BASE_URL}/widget.js?client=${clientId}"&gt;&lt;/script&gt;
         </pre>
       `
     })
@@ -102,32 +117,58 @@ app.use(express.static(path.join(__dirname, "public")))
 // ===== STRIPE ROUTES =====
 app.get("/create-checkout-session", async (req, res) => {
   try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "AI Widget Access"
-            },
-            unit_amount: 3000
-          },
-          quantity: 1
-        }
-      ],
-      customer_email: req.query.email,
-      success_url: `${process.env.BASE_URL}/success`,
-      cancel_url: `${process.env.BASE_URL}/cancel`
-    })
+  // ===== GET PLAN + EMAIL =====
+  const plan = req.query.plan || "starter"
+  const email = req.query.email
 
-    res.redirect(session.url)
+  if (!email) {
+    return res.status(400).send("Email is required")
+  }
+
+  // ===== PRICING LOGIC =====
+  let price = 3000 // $30 default
+
+  if (plan === "pro") price = 7000 // $70
+  if (plan === "premium") price = 15000 // $150
+
+  // ===== CREATE STRIPE SESSION =====
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    mode: "payment",
+
+    line_items: [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `CyberITLeads AI Bot (${plan})`
+          },
+          unit_amount: price
+        },
+        quantity: 1
+      }
+    ],
+
+    // 🔥 THIS IS CRITICAL (used in webhook)
+    metadata: {
+      plan: plan
+    },
+
+    customer_email: email,
+
+    success_url: `${process.env.BASE_URL}/success`,
+    cancel_url: `${process.env.BASE_URL}/cancel`
+  })
+
+  // ===== REDIRECT USER TO STRIPE =====
+  res.redirect(session.url)
+
   } catch (error) {
-    console.error(error)
+    console.error("STRIPE ERROR:", error)
     res.status(500).send("Error creating checkout session")
   }
 })
+
 
 app.get("/success", (req, res) => {
   res.send("✅ Payment successful!")
@@ -137,150 +178,235 @@ app.get("/cancel", (req, res) => {
   res.send("❌ Payment cancelled")
 })
 
+function summarizeOrder(order) {
+  const counts = {}
+
+  order.forEach(item => {
+    counts[item] = (counts[item] || 0) + 1
+  })
+
+  return Object.entries(counts)
+    .map(([item, qty]) => {
+      const cleanName = item.replace("_", " ")
+      return `${qty} ${cleanName}`
+    })
+    .join(", ")
+  }
 // ===== CHAT =====
 app.post("/chat", async (req, res) => {
-  try {
-    const userMessage = req.body.message
+  const message = req.body.message || ""
+  const lowerMsg = message.toLowerCase()
+  const userId = req.ip
+  const client = req.body.clientId || "default"
 
-    const CLIENTS = {
-      restaurant: `
-    You are a restaurant AI assistant.
-    Answer only about:
-    - menu
-    - food
-    - drinks
-    - reservations
-    - opening hours
-    - location
+  if (!sessions[userId]) {
+    sessions[userId] = { order: [] }
+  }
 
-    If question is unrelated, guide back to restaurant topics.
-    Be short, helpful, direct.
-    `,
+  const session = sessions[userId]
 
-      stoiccode: `
-    You are the StoicCode AI assistant.
+  const menu = {
+    pizza: ["pizza"],
+    burger: ["burger"],
+    cola: ["cola", "drink", "soda"],
+    fries: ["fries", "chips"],
+    garlic_bread: ["garlic bread", "garlic"]
+  }
 
-    Your job is to help visitors understand Stoic philosophy and encourage them to buy the books and products on the StoicCode website.
+  // ===== ADD ITEMS =====
+  Object.entries(menu).forEach(([key, aliases]) => {
+    aliases.forEach(alias => {
+      if (lowerMsg.includes(alias)) {
+        const match = lowerMsg.match(new RegExp(`(\\d+)\\s*${alias}`))
+        const qty = match ? parseInt(match[1]) : 1
 
-    Be persuasive, clear, and confident.
-    Focus on the real benefits of Stoicism:
-    - discipline
-    - self-control
-    - mental strength
-    - clarity
-    - peace of mind
-    - resilience
-    - better decision-making
-    - stronger character
+        for (let i = 0; i < qty; i++) {
+          session.order.push(key)
+        }
+      }
+    })
+  })
 
-    Your goal is not just to explain Stoicism, but to make the visitor feel that this philosophy can improve their life right now.
+  // ===== REMOVE ITEM =====
+  if (lowerMsg.includes("remove")) {
+    const item = menu.find(i => lowerMsg.includes(i))
 
-    When appropriate:
-    - explain how Stoicism helps in modern life
-    - connect the philosophy to everyday struggles like stress, distraction, anger, weakness, fear, and lack of discipline
-    - mention that the books and resources on the website can help them apply these principles
-    - encourage them to explore or buy the books
-
-    Tone:
-    - deep but easy to understand
-    - calm, wise, and convincing
-    - not too long
-    - not robotic
-    - not overly salesy, but still conversion-focused
-
-    End with a simple call to action such as:
-    - "Would you like me to recommend a good book to start with?"
-    - "I can help you choose the best Stoic resource."
-    - "Would you like to explore the books on StoicCode?"
-
-    Do not sound like a generic chatbot.
-    Do not be vague.
-    Do not mention products that are not on the website.
-    `,
-
-      law: `
-    You are a professional legal assistant.
-    Answer formally and clearly.
-    `,
-
-      ecommerce: `
-    You are a sales assistant.
-    Help convert visitors into customers.
-    `,
-
-      cyberitleads: `
-    You are a business assistant helping restaurant owners.
-
-    Your goal is to CONVINCE them to install the AI chatbot.
-
-    Focus on:
-    - More orders
-    - Faster responses
-    - No missed customers
-    - Works 24/7
-
-    Example behavior:
-
-    If user asks what it does:
-    → "This AI assistant answers customers instantly and takes orders automatically — even when you're busy or closed."
-
-    If user shows interest:
-    → "I can set this up on your website in under 2 minutes. Would you like to try it?"
-
-    If user hesitates:
-    → "Most restaurants lose customers due to slow replies. This solves that instantly."
-
-    Always guide toward:
-    → "Do you want to install it on your website?"
-
-    Keep it short, persuasive, and business-focused.
-    `
+    if (!item) {
+      return res.json({ reply: "What do you want to remove?" })
     }
 
-    const client = req.query.client || "default"
+    const index = session.order.indexOf(item)
 
-    console.log("FULL QUERY:", req.query)
-    console.log("CLIENT:", client)
-    console.log("SYSTEM PROMPT:", CLIENTS[client])
+    if (index === -1) {
+      return res.json({ reply: `No ${item} in your order.` })
+    }
+
+    session.order.splice(index, 1)
+
+    return res.json({
+      reply: `Removed 1 ${item}. Now: ${summarizeOrder(session.order)}`
+    })
+  }
+
+  // ===== CLEAR ORDER =====
+  if (lowerMsg.includes("cancel") || lowerMsg.includes("clear")) {
+    session.order = []
+    return res.json({ reply: "Order cleared." })
+  }
+
+  // ===== EDIT QUANTITY =====
+  const editMatch = lowerMsg.match(/(\d+)\s*(pizza|burger|cola|fries)/)
+
+  if (lowerMsg.includes("make") && editMatch) {
+    const qty = parseInt(editMatch[1])
+    const item = editMatch[2]
+
+    session.order = session.order.filter(i => i !== item)
+
+    for (let i = 0; i < qty; i++) {
+      session.order.push(item)
+    }
+
+    return res.json({
+      reply: `Updated: ${summarizeOrder(session.order)}`
+    })
+  }
+
+  // ===== CONFIRM ORDER =====
+  if (lowerMsg.includes("yes") || lowerMsg.includes("confirm")) {
+    if (session.order.length === 0) {
+      return res.json({ reply: "You haven't added anything yet." })
+    }
+
+    const finalOrder = summarizeOrder(session.order)
+
+    try {
+      await supabase.from("orders").insert([
+        {
+          client_id: client,
+          items: finalOrder
+        }
+      ])
+    } catch (err) {
+      console.log("DB ERROR:", err)
+    }
+
+    session.order = []
+
+    return res.json({
+      reply: `Perfect. Your order is ${finalOrder}.`
+    })
+  }
+
+  // ===== SMART UPSELL =====
+  // ===== SMART RESPONSE =====
+  let botReply = null
+
+  // ===== RULE LOGIC =====
+  if (session.order.length > 0) {
+
+    const lastItem = session.order[session.order.length - 1]
+    let upsell = ""
+
+    if (lastItem === "pizza") {
+      upsell = "🔥 Add a drink or garlic bread?"
+    } else if (lastItem === "burger") {
+      upsell = "🍟 Want fries or a drink?"
+    } else if (lastItem === "cola") {
+      upsell = "👌 Want food with your drink?"
+    }
+
+    const variations = ["Got it 👍", "Nice choice 👌", "Added 🔥", "Perfect ✅"]
+    let replyText = variations[Math.floor(Math.random() * variations.length)]
+
+    replyText += ` You now have ${summarizeOrder(session.order)}.`
+
+    if (upsell) replyText += ` ${upsell}`
+
+    botReply = replyText
+  }
 
 
-    const systemPrompt = CLIENTS[client] || "You are a helpful AI assistant."
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+  // ===== OPENAI FALLBACK =====
+  try {
+    const ai = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage }
-      ],
-      max_tokens: 300
+        {
+          role: "system",
+          content: `
+You are a restaurant AI assistant.
+
+Menu: pizza, burger, cola, fries, garlic bread.
+
+Extract user
+
+You help users:
+- understand menu
+- answer questions
+- guide ordering
+
+Keep responses short and natural.
+`
+        },
+        {
+          role: "user",
+          content: message
+        }
+      ]
     })
 
-    const reply = completion.choices[0].message.content || "No response"
-
-    res.json({ reply });
-
-  } catch (error) {
-    console.error("CHAT ERROR:", error);
-    res.status(500).json({ reply: "AI request failed" })
+    return res.json({
+      reply: ai.choices[0].message.content
+    })
+  } catch (err) {
+    console.log("AI ERROR:", err)
   }
+
+  return res.json({
+    reply: "Try: pizza, 2 pizza, burger, cola..."
+  })
 })
+
+
 
 // ===== LEADS =====
 app.post("/lead", async (req, res) => {
   try {
-    const { email, message, client } = req.body
+    let { email, message, client } = req.body
+
+    // ===============================
+    // 🔐 FORCE CYBERITLEADS ONLY
+    // ===============================
+    if (client !== "cyberitleads") {
+      return res.status(403).json({ error: "Unauthorized lead source" })
+    }
+
+    // ===============================
+    // 🧹 CLEAN INPUT
+    // ===============================
+    email = email?.trim().toLowerCase()
+    message = message?.trim()
 
     if (!email || !message) {
       return res.status(400).json({ error: "Missing lead data" })
     }
 
+    // Simple email validation
+    if (!email.includes("@") || email.length < 5) {
+      return res.status(400).json({ error: "Invalid email" })
+    }
+
+    // ===============================
+    // 💾 SAVE TO SUPABASE
+    // ===============================
     const { error } = await supabase
       .from("leads")
       .insert([
         {
           email,
           message,
-          client: client || "default",
+          source: "cyberitleads",
           created_at: new Date().toISOString()
         }
       ])
@@ -290,56 +416,213 @@ app.post("/lead", async (req, res) => {
       return res.status(500).json({ error: "Failed to save lead" })
     }
 
-    /* ===== SEND EMAIL TO YOU (BUSINESS) ===== */
-  try {
-    await transporter.sendMail({
-      from: `"CyberITLeads" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      subject: "🔥 New Lead Captured",
-      html: `
-        <h2>New Lead</h2>
-         <p><b>Email:</b> ${email}</p>
-         <p><b>Message:</b> ${message}</p>
-         <p><b>client:</b> ${client || "default"}</p>    
-      `
-    })
+    // ===============================
+    // 📧 EMAIL TO YOU (BUSINESS ALERT)
+    // ===============================
+    try {
+      await transporter.sendMail({
+        from: `"CyberITLeads" <${process.env.EMAIL_USER}>`,
+        to: process.env.EMAIL_USER,
+        subject: "🔥 New Restaurant Lead",
+        html: `
+          <h2>🚀 New Lead Captured</h2>
 
-    console.log("BUSINESS EMAIL SENT ✅")
+          <p><b>Email:</b> ${email}</p>
+          <p><b>Message:</b></p>
+          <p style="background:#f5f5f5;padding:10px;border-radius:6px;">
+            ${message}
+          </p>
 
-  } catch (err) {
-    console.error("BUSINESS EMAIL FAILED ❌", err)
-  }
+          <hr/>
+          <p>Source: CyberITLeads</p>
+        `
+      })
 
-    /* ===== SEND EMAIL TO CLIENT ===== */
-  try {
-    await transporter.sendMail({
-      from: `"CyberITLeads" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "🚀 We received your request",
-      html:`
-         <h2>You're in.</h2>
-         <p>Thanks for your interest in CyberITLeads.</p>
-         <p>Expect a response shortly.</p>
-         <br>
-         <p><b>Your message:</b></P>
-         <p>${message}</p>
-         <br/>
-         <p> CyberITLeads Team</p>
-      `
-    });
+      console.log("BUSINESS EMAIL SENT ✅")
+    } catch (err) {
+      console.error("BUSINESS EMAIL FAILED ❌", err)
+    }
 
-    console.log("CLIENT EMAIL SENT ✅")
+    // ===============================
+    // 📧 EMAIL TO CLIENT (LEAD CONFIRMATION)
+    // ===============================
+    try {
+      await transporter.sendMail({
+        from: `"CyberITLeads" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "🚀 You're in — AI Setup Started",
+        html: `
+          <h2>You're in.</h2>
 
+          <p>Thanks for reaching out.</p>
+
+          <p>
+          We're preparing your AI assistant setup right now.
+          </p>
+
+          <p>
+          You’ll be contacted shortly with next steps.
+          </p>
+
+          <br/>
+
+          <p><b>Your message:</b></p>
+          <p style="background:#f5f5f5;padding:10px;border-radius:6px;">
+            ${message}
+          </p>
+
+          <br/>
+
+          <p>— CyberITLeads Team</p>
+        `
+      })
+
+      console.log("CLIENT EMAIL SENT ✅")
     } catch (err) {
       console.error("CLIENT EMAIL FAILED ❌", err)
     }
-    /* ===== RESPONSE ===== */
+
+    // ===============================
+    // ✅ RESPONSE
+    // ===============================
     res.json({ ok: true })
+
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: "Server error" })
   }
 })
+
+app.post("/stoic-chat", async (req, res) => {
+  try {
+    const message = req.body.message || "";
+    const cleaned = message.trim().toLowerCase();
+
+    // 🔥 GREETING HANDLER (PUT THIS HERE)
+    if (/^(hi|hello|hey)$/i.test(cleaned)) {
+      return res.json({
+        message: "Hey. What's on your mind?",
+        products: []
+      });
+    }
+
+    const matchedProducts = findMatchingProducts(message);
+
+    // 2. PREPARE PRODUCT CONTEXT
+    const productContext = matchedProducts.map(p => ({
+      name: p.name,
+      pitch: p.pitch,
+      category: p.category,
+      problems: p.problems,
+      link: p.link || p.amazon || ""
+    }));
+
+    // 3. CALL OPENAI
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `
+You are a sharp, emotionally intelligent advisor who understands people deeply.
+
+Your goal:
+1. Understand what the user REALLY feels (not just what they say)
+2. Respond in a natural, human way (not robotic)
+3. Make the user feel understood
+4. Recommend ONE book naturally (not forced)
+
+Style:
+- Conversational, calm, confident
+- No robotic phrasing like "you struggle with"
+- No repeating the same sentence structure
+- Speak like a real human, not a system
+
+Structure:
+1. One short relatable insight (1–2 lines max)
+2. Then recommend the book naturally like:
+"You should read [book name] — [short reason]"
+
+Rules:
+- No lists
+- No generic advice
+- No repetition
+- Make each response feel different
+
+Output ONLY valid JSON:
+{
+  "message": "your response",
+  "products": [
+    {
+      "name": "exact book name",
+      "reason": "short natural reason"
+    }
+  ]
+}
+`
+        },
+        {
+          role: "user",
+          content: `
+User message:
+${message}
+
+Available products:
+${JSON.stringify(productContext)}
+`
+        }
+      ]
+    });
+
+    // 4. PARSE RESPONSE SAFELY
+    let aiResponse;
+
+    try {
+      const raw = completion.choices[0].message.content;
+
+      // remove possible markdown ```json
+      const cleaned = raw.replace(/```json|```/g, "").trim();
+
+      aiResponse = JSON.parse(cleaned);
+
+    } catch (err) {
+      console.log("RAW AI OUTPUT:", completion.choices[0].message.content);
+
+      return res.json({
+        message: completion.choices[0].message.content || "Try again.",
+        products: []
+      });
+    }
+
+    // 5. ATTACH REAL LINKS
+    aiResponse.products = aiResponse.products.map(aiProduct => {
+      const real = matchedProducts.find(
+        p =>
+          p.name.toLowerCase().trim() ===
+          aiProduct.name.toLowerCase().trim()
+      );
+
+      return {
+        name: aiProduct.name,
+        reason: aiProduct.reason,
+        link: real?.link || real?.amazon || ""
+      };
+    });
+
+    // 6. RETURN CLEAN RESPONSE
+    res.json(aiResponse);
+
+  } catch (err) {
+    console.error("Stoic chat error:", err);
+
+    res.status(500).json({
+      message: "Something went wrong.",
+      products: []
+    });
+  }
+});
+
+
 
 // ===== START SERVER =====
 const PORT = process.env.PORT || 3000
