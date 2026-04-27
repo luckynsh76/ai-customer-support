@@ -69,15 +69,11 @@ style.innerHTML = `
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 
-  display: none;
+  display: flex;
   flex-direction: column;
   overflow: hidden;
 
   z-index: 9999;
-}
-
-.chat-widget.open {
-  display: flex;
 }
 
 .chat-toggle {
