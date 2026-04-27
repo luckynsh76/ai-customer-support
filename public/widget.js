@@ -57,17 +57,10 @@ const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
 
   document.body.appendChild(toggle)
 
-  // Hide chat initially
-  widget.style.display = "none"
-
   // Toggle logic
   toggle.onclick = () => {
-    if (widget.style.display === "none") {
-      widget.style.display = "flex"
-    } else {
-      widget.style.display = "none"
-  }
-}
+    widget.classList.toggle("open");
+  };
 
 
   const style = document.createElement("style")
@@ -88,11 +81,15 @@ style.innerHTML = `
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 
-  display: flex;
+  display: none;
   flex-direction: column;
   overflow: hidden;
 
   z-index: 9999;
+}
+
+.chat-widget.open {
+  display: flex;
 }
 
 .chat-header{
