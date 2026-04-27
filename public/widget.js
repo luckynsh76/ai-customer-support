@@ -50,20 +50,49 @@ const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
   `;
 
   document.body.appendChild(widget)
+  // Create toggle button
+  const toggle = document.createElement("div")
+  toggle.id = "chat-toggle"
+  toggle.innerHTML = "💬"
+
+  document.body.appendChild(toggle)
+
+  // Hide chat initially
+  widget.style.display = "none"
+
+  // Toggle logic
+  toggle.onclick = () => {
+    if (widget.style.display === "none") {
+      widget.style.display = "flex"
+    } else {
+      widget.style.display = "none"
+  }
+}
+
 
   const style = document.createElement("style")
 
 style.innerHTML = `
-.chat-widget{
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  width:320px;
-  background:white;
-  border-radius:10px;
-  box-shadow:0 10px 30px rgba(0,0,0,.2);
-  font-family:Arial;
-  overflow:hidden;
+.chat-widget {
+  position: fixed;
+  bottom: 20px;
+  right: 16px;
+
+  width: 90%;
+  max-width: 350px;
+
+  height: 60vh;
+  max-height: 500px;
+
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  z-index: 9999;
 }
 
 .chat-header{
@@ -126,13 +155,17 @@ style.innerHTML = `
 background: #333;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .chat-widget {
-    width: 95%;
-    right: 2.5%;
-    bottom: 10px;
-    height: 70vh;
+    width: 92%;
+    max-width: 320px;
+
+    height: 55vh;
+
+    bottom: 12px;
+    right: 8px;
   }
+}
 
   .chat-messages {
     height: calc(70vh - 100px);
