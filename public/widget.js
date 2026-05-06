@@ -5,8 +5,10 @@
   const HOST_TO_CLIENT = {
   "stoiccode.org": "stoiccode",
   "cyberitleads.org": "cyberitleads",
-  "localhost": "default"
+  "restaurant.com": "restaurant",
+  "localhost": "restaurant"
 };
+
 
 function getCleanDomain() {
   let host = window.location.hostname.toLowerCase();
@@ -27,6 +29,10 @@ const SITE_CONFIG = {
     title: "CyberITLeads Assistant",
     placeholder: "Ask about leads, AI widgets, or growing your business..."
   },
+  restaurant: {
+    title: "Restaurant Assistant",
+    placeholder: "Order food, ask about menu..."
+},
   default: {
     title: "AI Assistant",
     placeholder: "Ask a question..."
@@ -35,6 +41,9 @@ const SITE_CONFIG = {
 
 const domain = getCleanDomain();
 const client = HOST_TO_CLIENT[domain] || "default";
+console.log("DOMAIN:", domain)
+console.log("CLIENT:", client)
+
 
 const ui = SITE_CONFIG[client] || SITE_CONFIG.default;
 
@@ -202,15 +211,28 @@ input.addEventListener("keypress", function(e) {
   }
 })
 
+
+// 🔐 PERSISTENT SESSION ID (VERY IMPORTANT)
+const SESSION_KEY = "sessionId"
+
+let sessionId = localStorage.getItem(SESSION_KEY)
+
+if (!sessionId) {
+  sessionId = crypto.randomUUID()
+  localStorage.setItem(SESSION_KEY, sessionId)
+}
+
 async function sendMessage(message, clientId) {
-  const res = await fetch("https://ai-customer-support-jbrt.onrender.com/stoic-chat", {
+  const API_URL = "https://ai-customer-support-jbrt.onrender.com"
+
+  const res = await fetch(`${API_URL}/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      message,
-      clientId
+    message: message,
+    sessionId: sessionId
     })
   })
 
@@ -229,7 +251,8 @@ async function send(){
   console.log("CLIENT VALUE:", client)
 
   const data = await sendMessage(text, client)
-  messages.innerHTML += `<div class="bot">${data.message}</div>`
+  console.log("FULL RESPONSE:", data)
+  messages.innerHTML += `<div class="bot">${data.message || data.reply || data.response || "No reply"}</div>`
 
 
   if (client === "stoiccode") {

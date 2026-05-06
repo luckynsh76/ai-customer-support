@@ -2,6 +2,7 @@ import "dotenv/config"
 import rateLimit from "express-rate-limit"
 import express from "express"
 import cors from "cors"
+import session from "express-session"
 import OpenAI from "openai"
 import path from "path"
 import { fileURLToPath } from "url"
@@ -13,11 +14,20 @@ import { v4 as uuidv4 } from "uuid"
 import { findMatchingProducts } from "./router.js";
 import { PRODUCTS } from "./bookslinks.js"
 
-const sessions = {}
-
-
 // ===== INIT =====
 const app = express()
+app.use(session({
+  secret: "keyboard cat",
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }
+}))
+
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}))
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
@@ -179,32 +189,39 @@ app.get("/cancel", (req, res) => {
 })
 
 function summarizeOrder(order) {
-  const counts = {}
-
-  order.forEach(item => {
-    counts[item] = (counts[item] || 0) + 1
-  })
-
-  return Object.entries(counts)
+  return Object.entries(order)
     .map(([item, qty]) => {
       const cleanName = item.replace("_", " ")
-      return `${qty} ${cleanName}`
+      return `${qty} ${cleanName}${qty > 1 ? "s" : ""}`
     })
     .join(", ")
-  }
+}
+
 // ===== CHAT =====
 app.post("/chat", async (req, res) => {
   const message = req.body.message || ""
   const lowerMsg = message.toLowerCase()
-  const userId = req.ip
-  const client = req.body.clientId || "default"
 
-  if (!sessions[userId]) {
-    sessions[userId] = { order: [] }
+  // 👇 ADD THIS EXACTLY HERE
+  if (!req.session.order) {
+    req.session.order = {}
   }
 
-  const session = sessions[userId]
+  const order = req.session.order
+  // ===== HANDLE ORDER QUESTIONS =====
+  console.log("CHECK ORDER:", order)
+  if (lowerMsg.includes("what have i ordered") || lowerMsg.includes("my order")) {
+    if (Object.keys(order).length === 0) {
+      return res.json({ message: "You haven't ordered anything yet." })
+    }
 
+    const formatted = summarizeOrder(order)
+
+    return res.json({
+      message: `You have ordered: ${formatted}.`
+    })
+  }
+  
   const menu = {
     pizza: ["pizza"],
     burger: ["burger"],
@@ -213,72 +230,72 @@ app.post("/chat", async (req, res) => {
     garlic_bread: ["garlic bread", "garlic"]
   }
 
-  // ===== ADD ITEMS =====
-  Object.entries(menu).forEach(([key, aliases]) => {
-    aliases.forEach(alias => {
+  // ===== ADD ITEMS (FIXED) =====
+  for (const [key, aliases] of Object.entries(menu)) {
+    for (const alias of aliases) {
       if (lowerMsg.includes(alias)) {
         const match = lowerMsg.match(new RegExp(`(\\d+)\\s*${alias}`))
         const qty = match ? parseInt(match[1]) : 1
 
-        for (let i = 0; i < qty; i++) {
-          session.order.push(key)
-        }
+        order[key] = (order[key] || 0) + qty
+        break
       }
-    })
-  })
+    }
+  }
+
 
   // ===== REMOVE ITEM =====
   if (lowerMsg.includes("remove")) {
-    const item = menu.find(i => lowerMsg.includes(i))
+    const item = Object.keys(menu).find(key =>
+      menu[key].some(alias => lowerMsg.includes(alias))
+    )
 
     if (!item) {
-      return res.json({ reply: "What do you want to remove?" })
+      return res.json({ message: "What do you want to remove?" })
     }
 
-    const index = session.order.indexOf(item)
+    if (order[item]) {
+      order[item] -= 1
 
-    if (index === -1) {
-      return res.json({ reply: `No ${item} in your order.` })
+      if (order[item] <= 0) {
+        delete order[item]
+      }
     }
-
-    session.order.splice(index, 1)
 
     return res.json({
-      reply: `Removed 1 ${item}. Now: ${summarizeOrder(session.order)}`
+      message: `Removed 1 ${item}.`
     })
   }
 
+
   // ===== CLEAR ORDER =====
   if (lowerMsg.includes("cancel") || lowerMsg.includes("clear")) {
-    session.order = []
-    return res.json({ reply: "Order cleared." })
+    order = {}
+    return res.json({ message: "Order cleared." })
   }
 
   // ===== EDIT QUANTITY =====
   const editMatch = lowerMsg.match(/(\d+)\s*(pizza|burger|cola|fries)/)
 
-  if (lowerMsg.includes("make") && editMatch) {
+  if (editMatch) {
     const qty = parseInt(editMatch[1])
     const item = editMatch[2]
 
-    session.order = session.order.filter(i => i !== item)
-
-    for (let i = 0; i < qty; i++) {
-      session.order.push(item)
-    }
+    order[item] = qty
 
     return res.json({
-      reply: `Updated: ${summarizeOrder(session.order)}`
+      message: `Updated: ${summarizeOrder(order)}`
     })
   }
 
+
   // ===== CONFIRM ORDER =====
-  if (lowerMsg.includes("yes") || lowerMsg.includes("confirm")) {
-    if (session.order.length === 0) {
-      return res.json({ reply: "You haven't added anything yet." })
+  if (lowerMsg.includes("confirm")) {
+    if (Object.keys(order).length === 0) {
+      return res.json({ message: "You haven't added anything yet." })
     }
 
-    const finalOrder = summarizeOrder(session.order)
+    const finalOrder = summarizeOrder(order)
 
     try {
       await supabase.from("orders").insert([
@@ -291,21 +308,18 @@ app.post("/chat", async (req, res) => {
       console.log("DB ERROR:", err)
     }
 
-    session.order = []
 
     return res.json({
-      reply: `Perfect. Your order is ${finalOrder}.`
+      message: `Perfect. Your order is ${finalOrder}.`
     })
   }
 
-  // ===== SMART UPSELL =====
   // ===== SMART RESPONSE =====
   let botReply = null
 
-  // ===== RULE LOGIC =====
-  if (session.order.length > 0) {
+  if (Object.keys(order).length > 0) {
 
-    const lastItem = session.order[session.order.length - 1]
+    const lastItem = Object.keys(order).slice(- 1)[0]
     let upsell = ""
 
     if (lastItem === "pizza") {
@@ -319,53 +333,46 @@ app.post("/chat", async (req, res) => {
     const variations = ["Got it 👍", "Nice choice 👌", "Added 🔥", "Perfect ✅"]
     let replyText = variations[Math.floor(Math.random() * variations.length)]
 
-    replyText += ` You now have ${summarizeOrder(session.order)}.`
+    replyText += ` You now have ${summarizeOrder(order)}.`
 
     if (upsell) replyText += ` ${upsell}`
 
     botReply = replyText
   }
 
-
-  // ===== OPENAI FALLBACK =====
-  try {
-    const ai = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        {
-          role: "system",
-          content: `
-You are a restaurant AI assistant.
-
-Menu: pizza, burger, cola, fries, garlic bread.
-
-Extract user
-
-You help users:
-- understand menu
-- answer questions
-- guide ordering
-
-Keep responses short and natural.
-`
-        },
-        {
-          role: "user",
-          content: message
-        }
-      ]
-    })
-
-    return res.json({
-      reply: ai.choices[0].message.content
-    })
-  } catch (err) {
-    console.log("AI ERROR:", err)
+  if (botReply) {
+    return res.json({ message: botReply })
   }
 
-  return res.json({
-    reply: "Try: pizza, 2 pizza, burger, cola..."
-  })
+  // ===== OPENAI FALLBACK =====
+
+  const formattedOrder = summarizeOrder(order) || "nothing yet"
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: `
+You are a restaurant assistant.
+
+Current customer order:
+${formattedOrder}
+
+If the user asks about their order, ALWAYS use this data.
+Do NOT say the order is empty if it is not.
+`
+    },
+    {
+      role: "user",
+      content: message
+    }
+  ]
+})
+
+const aiReply = completion.choices[0].message.content
+
+return res.json({ message: aiReply })
 })
 
 
@@ -622,6 +629,51 @@ ${JSON.stringify(productContext)}
   }
 });
 
+app.post("/brain", async (req, res) => {
+  const message = req.body.message || ""
+  const lower = message.toLowerCase()
+  const clientId = req.body.clientId
+
+  // 🔒 FIRST: lock by client
+  if (clientId === "stoiccode") {
+    return app._router.handle(
+      { ...req, url: "/stoic-chat" },
+      res
+    )
+  }
+
+  if (clientId === "cyberitleads") {
+    return app._router.handle(
+      { ...req, url: "/lead" },
+      res
+    )
+  }
+
+  // 🍕 restaurant intent
+  if (
+    lower.includes("pizza") ||
+    lower.includes("burger") ||
+    lower.includes("order") ||
+    lower.includes("food")
+  ) {
+    return app._router.handle({ ...req, url: "/chat" }, res)
+  }
+
+  // 💼 business / lead intent
+  if (
+    lower.includes("website") ||
+    lower.includes("price") ||
+    lower.includes("service") ||
+    lower.includes("business") ||
+    lower.includes("ai") ||
+    lower.includes("automation")
+  ) {
+    return app._router.handle({ ...req, url: "/lead" }, res)
+  }
+
+  // 🧠 default → stoic
+  return app._router.handle({ ...req, url: "/stoic-chat" }, res)
+})
 
 
 // ===== START SERVER =====

@@ -138,18 +138,29 @@ async function send(){
 
 
 console.log("CLIENT VALUE:", client)
+let sessionId = localStorage.getItem("sessionId")
+
+if (!sessionId) {
+  sessionId = Math.random().toString(36).substring(2)
+  localStorage.setItem("sessionId", sessionId)
+}
+
 const res = await fetch(`https://ai-customer-support-jbrt.onrender.com/chat?client=${client}`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
     "x-client-key": "cyberitleads_main_key"
   },
-  body: JSON.stringify({ message: text })
+  body: JSON.stringify({
+    message: text,
+    sessionId: sessionId
+  })
 })
+
 
 const data = await res.json()
 
-messages.innerHTML += `<div class="bot">${data.reply}</div>`
+messages.innerHTML += `<div class="bot">${data.message}</div>`
 
 if (client === "cyberitleads" && !document.getElementById("leadBtn")) {
   messages.innerHTML += `<div style="margin-top:8px;"><button id="leadBtn">Get a free setup</button></div>`
