@@ -225,7 +225,7 @@ if (!sessionId) {
 async function sendMessage(message, clientId) {
   const API_URL = "https://ai-customer-support-jbrt.onrender.com"
 
-  const res = await fetch(`${API_URL}/chat`, {
+  const res = await fetch(`${API_URL}/brain`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
