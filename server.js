@@ -636,14 +636,14 @@ app.post("/brain", async (req, res) => {
 
   // 🔒 FIRST: lock by client
   if (clientId === "stoiccode") {
-    return app._router.handle(
+    return app.handle(
       { ...req, url: "/stoic-chat" },
       res
     )
   }
 
   if (clientId === "cyberitleads") {
-    return app._router.handle(
+    return app.handle(
       { ...req, url: "/lead" },
       res
     )
@@ -656,7 +656,7 @@ app.post("/brain", async (req, res) => {
     lower.includes("order") ||
     lower.includes("food")
   ) {
-    return app._router.handle({ ...req, url: "/chat" }, res)
+    return app.handle({ ...req, url: "/chat" }, res)
   }
 
   // 💼 business / lead intent
@@ -668,11 +668,11 @@ app.post("/brain", async (req, res) => {
     lower.includes("ai") ||
     lower.includes("automation")
   ) {
-    return app._router.handle({ ...req, url: "/lead" }, res)
+    return app.handle({ ...req, url: "/lead" }, res)
   }
 
   // 🧠 default → stoic
-  return app._router.handle({ ...req, url: "/stoic-chat" }, res)
+  return app.handle({ ...req, url: "/stoic-chat" }, res)
 })
 
 
