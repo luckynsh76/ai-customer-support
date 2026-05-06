@@ -232,7 +232,8 @@ async function sendMessage(message, clientId) {
     },
     body: JSON.stringify({
     message: message,
-    sessionId: sessionId
+    sessionId: sessionId,
+    clientId: clientId
     })
   })
 
