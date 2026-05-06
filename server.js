@@ -643,8 +643,29 @@ app.post("/brain", async (req, res) => {
   }
 
   if (clientId === "cyberitleads") {
+
+    if (
+      lower.includes("help") ||
+      lower.includes("website") ||
+      lower.includes("business") ||
+      lower.includes("ai")
+    ) {
+      return res.json({
+        message: "We can help automate your business with AI chat systems, lead capture, and smart customer support."
+      })
+    }
+
+    if (
+      lower.includes("price") ||
+      lower.includes("cost")
+    ) {
+      return res.json({
+        message: "Our plans start at $29/month depending on your business needs."
+      })
+    }
+
     return res.json({
-      message: "Welcome to CyberITLeads. We help businesses automate lead capture with AI."
+      message: "Tell us about your business and what you'd like to automate."
     })
   }
 
