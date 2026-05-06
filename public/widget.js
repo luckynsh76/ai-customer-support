@@ -287,13 +287,13 @@ async function send(){
         const email = prompt("Enter your email")
         if (!email) return
 
-        await fetch("https://ai-customer-support-jbrt.onrender.com/brain", {
+        await fetch("https://ai-customer-support-jbrt.onrender.com/lead", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email,
             message: "User clicked Get a free setup",
-            clientId: "cyberitleads"
+            client: "cyberitleads"
           })
         })
 
