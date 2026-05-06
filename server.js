@@ -644,7 +644,14 @@ app.post("/brain", async (req, res) => {
 
   if (clientId === "cyberitleads") {
     return app.handle(
-      { ...req, url: "/lead" },
+      {
+        ...req,
+        body: {
+          ...req.body,
+          clientId: "cyberitleads"
+        },
+        url: "/lead"
+      },
       res
     )
   }
