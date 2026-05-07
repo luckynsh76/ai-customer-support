@@ -678,22 +678,6 @@ app.post("/brain", async (req, res) => {
       })
     }
 
-    // DEFAULT
-    return res.json({
-      message: "Tell us what type of business you run and what you'd like to automate."
-    })
-  }
-  // 🍕 restaurant intent
-  if (
-    lower.includes("pizza") ||
-    lower.includes("burger") ||
-    lower.includes("order") ||
-    lower.includes("food")
-  ) {
-    return app.handle({ ...req, url: "/chat" }, res)
-  }
-
-
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
 
@@ -711,18 +695,31 @@ Your job:
 - speak clearly and professionally
 - keep responses short and useful
 `
-      },
+        },
 
-      {
-        role: "user",
-        content: message
-      }
-    ]
-  })
+        {
+          role: "user",
+          content: message
+        }
+      ]
+    })
 
-  return res.json({
-    message: completion.choices[0].message.content
-  })
+    return res.json({
+      message: completion.choices[0].message.content
+    })
+  }
+  // 🍕 restaurant intent
+  if (
+    lower.includes("pizza") ||
+    lower.includes("burger") ||
+    lower.includes("order") ||
+    lower.includes("food")
+  ) {
+    return app.handle({ ...req, url: "/chat" }, res)
+  }
+
+  // 🧠 default → stoic
+  return app.handle({ ...req, url: "/stoic-chat" }, res)
 })
 
 
