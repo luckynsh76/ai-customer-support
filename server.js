@@ -694,8 +694,35 @@ app.post("/brain", async (req, res) => {
   }
 
 
-  // 🧠 default → stoic
-  return app.handle({ ...req, url: "/stoic-chat" }, res)
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4.1-mini",
+
+    messages: [
+      {
+        role: "system",
+        content: `
+You are CyberITLeads AI assistant.
+
+Your job:
+- help businesses understand AI automation
+- explain AI chat widgets
+- help restaurants and local businesses
+- encourage lead generation
+- speak clearly and professionally
+- keep responses short and useful
+`
+      },
+
+      {
+        role: "user",
+        content: message
+      }
+    ]
+  })
+
+  return res.json({
+    message: completion.choices[0].message.content
+  })
 })
 
 
