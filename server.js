@@ -644,31 +644,45 @@ app.post("/brain", async (req, res) => {
 
   if (clientId === "cyberitleads") {
 
+    // RESTAURANTS
     if (
-      lower.includes("help") ||
-      lower.includes("website") ||
-      lower.includes("business") ||
-      lower.includes("ai")
+      lower.includes("restaurant") ||
+      lower.includes("pizza") ||
+      lower.includes("food")
     ) {
       return res.json({
-        message: "We can help automate your business with AI chat systems, lead capture, and smart customer support."
+        message: "We build AI assistants for restaurants that can answer customers, capture leads, and automate orders."
       })
     }
 
+    // PRICING
     if (
       lower.includes("price") ||
       lower.includes("cost")
     ) {
       return res.json({
-        message: "Our plans start at $29/month depending on your business needs."
+        message: "Our plans start at $29/month depending on features and automation needs."
       })
     }
 
+    // BUSINESS HELP
+    if (
+      lower.includes("website") ||
+      lower.includes("business") ||
+      lower.includes("ai") ||
+      lower.includes("automation") ||
+      lower.includes("help")
+    ) {
+      return res.json({
+        message: "We help businesses automate customer support, lead capture, and sales using AI."
+      })
+    }
+
+    // DEFAULT
     return res.json({
-      message: "Tell us about your business and what you'd like to automate."
+      message: "Tell us what type of business you run and what you'd like to automate."
     })
   }
-
   // 🍕 restaurant intent
   if (
     lower.includes("pizza") ||
@@ -679,17 +693,6 @@ app.post("/brain", async (req, res) => {
     return app.handle({ ...req, url: "/chat" }, res)
   }
 
-  // 💼 business / lead intent
-  if (
-    lower.includes("website") ||
-    lower.includes("price") ||
-    lower.includes("service") ||
-    lower.includes("business") ||
-    lower.includes("ai") ||
-    lower.includes("automation")
-  ) {
-    return app.handle({ ...req, url: "/lead" }, res)
-  }
 
   // 🧠 default → stoic
   return app.handle({ ...req, url: "/stoic-chat" }, res)
